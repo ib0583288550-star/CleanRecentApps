@@ -22,78 +22,83 @@ import de.robv.android.xposed.XposedHelpers
  */
 class RecentAppsHook : IXposedHookLoadPackage {
     override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam) {
-        val recentsClass = try {
-            XposedHelpers.findClassIfExists(
-                "com.android.quickstep.views.RecentsView",
-                lpparam.classLoader
-            )
-        } catch (t: Throwable) {
-            null
-        } ?: return
-
-        XposedBridge.log("CleanRecentApps: found Quickstep RecentsView in ${lpparam.packageName}")
-
         try {
+            // Hook the base View callback so this also works when RecentsView
+            // inherits onAttachedToWindow rather than overriding it.
             XposedHelpers.findAndHookMethod(
-                recentsClass,
-                "onFinishInflate",
+                View::class.java,
+                "onAttachedToWindow",
                 object : XC_MethodHook() {
                     override fun afterHookedMethod(param: MethodHookParam) {
                         val recents = param.thisObject as? ViewGroup ?: return
+                        if (!recents.javaClass.name.contains("RecentsView", ignoreCase = true)) return
                         if (recents.tag == TAG_MARKER) return
                         recents.tag = TAG_MARKER
-
-                        val context = recents.context
-                        val settings = XSharedPreferences("com.ybapps.cleanrecentapps", "settings").apply { reload() }
-                        val offsetX = settings.getInt("x", 0)
-                        val offsetY = settings.getInt("y", 0)
-                        val scale = settings.getInt("size", 100).coerceIn(70, 150) / 100f
-                        val button = TextView(context).apply {
-                            text = "ניקוי הכל"
-                            textSize = 14f * scale
-                            setTextColor(Color.WHITE)
-                            gravity = Gravity.CENTER
-                            setPadding(dp(context, (18 * scale).toInt()), dp(context, (12 * scale).toInt()), dp(context, (18 * scale).toInt()), dp(context, (12 * scale).toInt()))
-                            background = GradientDrawable().apply {
-                                setColor(Color.rgb(25, 118, 210))
-                                cornerRadius = dp(context, 28).toFloat()
-                            }
-                            elevation = dp(context, 8).toFloat()
-                            contentDescription = "ניקוי כל האפליקציות האחרונות"
-                            isClickable = true
-                            isFocusable = true
-                            setOnClickListener {
-                                if (!dismissAll(recents)) {
-                                    XposedBridge.log("CleanRecentApps: dismissAllTasks method not found on ${recents.javaClass.name}")
-                                }
-                            }
-                        }
-
-                        try {
-                            recents.addView(
-                                button,
-                                ViewGroup.LayoutParams(
-                                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                                    ViewGroup.LayoutParams.WRAP_CONTENT
-                                )
-                            )
-                            button.bringToFront()
-                            recents.post {
-                                val centeredX = (recents.width - button.width) / 2f
-                                val centeredY = (recents.height - button.height) / 2f
-                                button.x = (centeredX + dp(context, offsetX)).coerceIn(0f, (recents.width - button.width).coerceAtLeast(0).toFloat())
-                                button.y = (centeredY + dp(context, offsetY)).coerceIn(0f, (recents.height - button.height).coerceAtLeast(0).toFloat())
-                                button.bringToFront()
-                            }
-                            XposedBridge.log("CleanRecentApps: clear-all button injected")
-                        } catch (t: Throwable) {
-                            XposedBridge.log("CleanRecentApps: button injection failed: $t")
-                        }
+                        injectClearButton(recents)
                     }
                 }
             )
+            XposedBridge.log("CleanRecentApps: RecentsView attachment watcher active in ${lpparam.packageName}")
         } catch (t: Throwable) {
-            XposedBridge.log("CleanRecentApps: RecentsView hook failed: $t")
+            XposedBridge.log("CleanRecentApps: attachment hook failed in ${lpparam.packageName}: $t")
+        }
+    }
+
+    private fun injectClearButton(recents: ViewGroup) {
+        val context = recents.context
+        val settings = XSharedPreferences("com.ybapps.cleanrecentapps", "settings").apply { reload() }
+        val offsetX = settings.getInt("x", 0)
+        val offsetY = settings.getInt("y", 0)
+        val scale = settings.getInt("size", 100).coerceIn(70, 150) / 100f
+        val button = TextView(context).apply {
+            text = "ניקוי הכל"
+            textSize = 14f * scale
+            setTextColor(Color.WHITE)
+            gravity = Gravity.CENTER
+            setPadding(
+                dp(context, (18 * scale).toInt()),
+                dp(context, (12 * scale).toInt()),
+                dp(context, (18 * scale).toInt()),
+                dp(context, (12 * scale).toInt())
+            )
+            background = GradientDrawable().apply {
+                setColor(Color.rgb(25, 118, 210))
+                cornerRadius = dp(context, 28).toFloat()
+            }
+            elevation = dp(context, 8).toFloat()
+            contentDescription = "ניקוי כל האפליקציות האחרונות"
+            isClickable = true
+            isFocusable = true
+            setOnClickListener {
+                if (!dismissAll(recents)) {
+                    XposedBridge.log("CleanRecentApps: dismissAllTasks method not found on ${recents.javaClass.name}")
+                }
+            }
+        }
+
+        try {
+            recents.addView(
+                button,
+                ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+            )
+            button.bringToFront()
+            recents.post {
+                val centeredX = (recents.width - button.width) / 2f
+                val centeredY = (recents.height - button.height) / 2f
+                button.x = (centeredX + dp(context, offsetX)).coerceIn(
+                    0f, (recents.width - button.width).coerceAtLeast(0).toFloat()
+                )
+                button.y = (centeredY + dp(context, offsetY)).coerceIn(
+                    0f, (recents.height - button.height).coerceAtLeast(0).toFloat()
+                )
+                button.bringToFront()
+            }
+            XposedBridge.log("CleanRecentApps: clear-all button injected into ${recents.javaClass.name}")
+        } catch (t: Throwable) {
+            XposedBridge.log("CleanRecentApps: button injection failed: $t")
         }
     }
 
