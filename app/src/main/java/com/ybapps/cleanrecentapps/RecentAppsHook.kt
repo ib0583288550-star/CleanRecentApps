@@ -10,6 +10,7 @@ import de.robv.android.xposed.IXposedHookLoadPackage
 import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.XC_LoadPackage
 import de.robv.android.xposed.XposedBridge
+import de.robv.android.xposed.XSharedPreferences
 import de.robv.android.xposed.XposedHelpers
 
 /**
@@ -43,12 +44,16 @@ class RecentAppsHook : IXposedHookLoadPackage {
                         recents.tag = TAG_MARKER
 
                         val context = recents.context
+                        val settings = XSharedPreferences("com.ybapps.cleanrecentapps", "settings").apply { reload() }
+                        val offsetX = settings.getInt("x", 0)
+                        val offsetY = settings.getInt("y", 0)
+                        val scale = settings.getInt("size", 100).coerceIn(70, 150) / 100f
                         val button = TextView(context).apply {
                             text = "ניקוי הכל"
-                            textSize = 14f
+                            textSize = 14f * scale
                             setTextColor(Color.WHITE)
                             gravity = Gravity.CENTER
-                            setPadding(dp(context, 18), dp(context, 12), dp(context, 18), dp(context, 12))
+                            setPadding(dp(context, (18 * scale).toInt()), dp(context, (12 * scale).toInt()), dp(context, (18 * scale).toInt()), dp(context, (12 * scale).toInt()))
                             background = GradientDrawable().apply {
                                 setColor(Color.rgb(25, 118, 210))
                                 cornerRadius = dp(context, 28).toFloat()
@@ -74,9 +79,10 @@ class RecentAppsHook : IXposedHookLoadPackage {
                             )
                             button.bringToFront()
                             recents.post {
-                                val margin = dp(context, 20)
-                                button.x = (recents.width - button.width - margin).coerceAtLeast(0).toFloat()
-                                button.y = (recents.height - button.height - margin).coerceAtLeast(0).toFloat()
+                                val centeredX = (recents.width - button.width) / 2f
+                                val centeredY = (recents.height - button.height) / 2f
+                                button.x = (centeredX + dp(context, offsetX)).coerceIn(0f, (recents.width - button.width).coerceAtLeast(0).toFloat())
+                                button.y = (centeredY + dp(context, offsetY)).coerceIn(0f, (recents.height - button.height).coerceAtLeast(0).toFloat())
                                 button.bringToFront()
                             }
                             XposedBridge.log("CleanRecentApps: clear-all button injected")
