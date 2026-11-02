@@ -1,0 +1,21 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+}
+
+android {
+    namespace 'com.ybapps.cleanrecentapps'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.ybapps.cleanrecentapps'
+        minSdk 29
+        targetSdk 33
+        versionCode 1
+        versionName '0.1'
+    }
+}
+
+dependencies {
+    compileOnly 'de.robv.android.xposed:api:82'
+}
