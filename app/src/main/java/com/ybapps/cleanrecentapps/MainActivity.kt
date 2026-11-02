@@ -51,7 +51,7 @@ class MainActivity : Activity() {
         addSlider(root, "size", sizeLabel, 70, 150, prefs.getInt("size", 100))
 
         val note = TextView(this).apply {
-            text = "הזז את המחוונים ושמור. המיקום נשמר וייטען במודול LSPosed."
+            text = "הזז את המחוונים ושמור. ההגדרות נשמרות באפליקציה; החיבור שלהן לכפתור במסך Recent Apps יושלם בשלב התאמת המודול."
             textSize = 14f
             setTextColor(0xFFB9C7D3.toInt())
             setPadding(0, 24, 0, 12)
