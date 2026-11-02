@@ -9,84 +9,80 @@ import android.widget.TextView
 import android.widget.Toast
 
 class MainActivity : Activity() {
-    private val prefs by lazy { getSharedPreferences("settings", MODE_WORLD_READABLE) }
+    private val prefs by lazy { getSharedPreferences("settings", MODE_PRIVATE) }
     private lateinit var xLabel: TextView
     private lateinit var yLabel: TextView
     private lateinit var sizeLabel: TextView
+    private var currentX = 0
+    private var currentY = 0
+    private var currentSize = 100
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        currentX = prefs.getInt("x", 0)
+        currentY = prefs.getInt("y", 0)
+        currentSize = prefs.getInt("size", 100)
         buildScreen()
     }
 
     private fun buildScreen() {
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(28, 36, 28, 28)
+            setPadding(dp(24), dp(28), dp(24), dp(24))
             setBackgroundColor(0xFF101820.toInt())
         }
-
-        val title = TextView(this).apply {
+        root.addView(TextView(this).apply {
             text = "ניקוי מהיר"
             textSize = 28f
             setTextColor(0xFFFFFFFF.toInt())
             gravity = Gravity.CENTER
-        }
-        root.addView(title)
-
-        val subtitle = TextView(this).apply {
+        })
+        root.addView(TextView(this).apply {
             text = "התאמת כפתור ניקוי הכל"
             textSize = 16f
             setTextColor(0xFFB9C7D3.toInt())
             gravity = Gravity.CENTER
-            setPadding(0, 8, 0, 28)
-        }
-        root.addView(subtitle)
+            setPadding(0, dp(8), 0, dp(24))
+        })
 
-        xLabel = addSetting(root, "מיקום אופקי", "x")
-        addSlider(root, "x", xLabel, -100, 100, prefs.getInt("x", 0))
-        yLabel = addSetting(root, "מיקום אנכי", "y")
-        addSlider(root, "y", yLabel, -100, 100, prefs.getInt("y", 0))
-        sizeLabel = addSetting(root, "גודל הכפתור", "size")
-        addSlider(root, "size", sizeLabel, 70, 150, prefs.getInt("size", 100))
+        xLabel = addSetting(root, "מיקום אופקי")
+        addSlider(root, "x", xLabel, -100, 100, currentX)
+        yLabel = addSetting(root, "מיקום אנכי")
+        addSlider(root, "y", yLabel, -100, 100, currentY)
+        sizeLabel = addSetting(root, "גודל הכפתור")
+        addSlider(root, "size", sizeLabel, 70, 150, currentSize)
 
-        val note = TextView(this).apply {
-            text = "הכפתור יופיע רק בממשק Recent Apps המבוסס על AOSP Quickstep. מיקום וגודל נקראים מההגדרות לאחר טעינת מסך האפליקציות האחרונות מחדש."
+        root.addView(TextView(this).apply {
+            text = "הכפתור יופיע במסך האפליקציות האחרונות רק אם המכשיר משתמש ב־AOSP Quickstep ותומך בפעולת ניקוי המשימות."
             textSize = 14f
             setTextColor(0xFFB9C7D3.toInt())
-            setPadding(0, 24, 0, 12)
-        }
-        root.addView(note)
-
-        val save = TextView(this).apply {
+            setPadding(0, dp(22), 0, dp(16))
+        })
+        root.addView(TextView(this).apply {
             text = "שמור הגדרות"
             textSize = 18f
             gravity = Gravity.CENTER
             setTextColor(0xFFFFFFFF.toInt())
-            setBackgroundColor(0xFF1677D2.toInt())
-            setPadding(20, 18, 20, 18)
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(0xFF1677D2.toInt())
+                cornerRadius = dp(14).toFloat()
+            }
+            setPadding(dp(20), dp(16), dp(20), dp(16))
             setOnClickListener {
-                prefs.edit()
-                    .putInt("x", currentX)
-                    .putInt("y", currentY)
-                    .putInt("size", currentSize)
-                    .apply()
+                prefs.edit().putInt("x", currentX).putInt("y", currentY)
+                    .putInt("size", currentSize).apply()
                 Toast.makeText(this@MainActivity, "ההגדרות נשמרו", Toast.LENGTH_SHORT).show()
             }
-        }
-        root.addView(save)
+        })
         setContentView(root)
     }
 
-    private var currentX = 0
-    private var currentY = 0
-    private var currentSize = 100
-
-    private fun addSetting(parent: LinearLayout, title: String, key: String): TextView {
+    private fun addSetting(parent: LinearLayout, title: String): TextView {
         val label = TextView(this).apply {
+            text = title
             textSize = 16f
             setTextColor(0xFFFFFFFF.toInt())
-            setPadding(0, 18, 0, 4)
+            setPadding(0, dp(14), 0, dp(4))
         }
         parent.addView(label)
         return label
@@ -114,11 +110,6 @@ class MainActivity : Activity() {
                 override fun onStopTrackingTouch(bar: SeekBar?) {}
             })
         }
-        when (key) {
-            "x" -> currentX = initial
-            "y" -> currentY = initial
-            "size" -> currentSize = initial
-        }
         label.text = when (key) {
             "x" -> "מיקום אופקי: $initial"
             "y" -> "מיקום אנכי: $initial"
@@ -126,4 +117,6 @@ class MainActivity : Activity() {
         }
         parent.addView(seek)
     }
+
+    private fun dp(value: Int): Int = (value * resources.displayMetrics.density + 0.5f).toInt()
 }
