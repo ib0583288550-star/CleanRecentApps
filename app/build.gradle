@@ -10,7 +10,7 @@ android {
     defaultConfig {
         applicationId 'com.ybapps.cleanrecentapps'
         minSdk 29
-        targetSdk 33
+        targetSdk 23
         versionCode 1
         versionName '0.1'
     }
