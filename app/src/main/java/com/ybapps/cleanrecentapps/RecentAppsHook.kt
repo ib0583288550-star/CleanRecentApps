@@ -5,7 +5,6 @@ import android.graphics.drawable.GradientDrawable
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
-import android.widget.FrameLayout
 import android.widget.TextView
 import de.robv.android.xposed.IXposedHookLoadPackage
 import de.robv.android.xposed.XC_MethodHook
@@ -40,8 +39,8 @@ class RecentAppsHook : IXposedHookLoadPackage {
                 object : XC_MethodHook() {
                     override fun afterHookedMethod(param: MethodHookParam) {
                         val recents = param.thisObject as? ViewGroup ?: return
-                        if (recents.getTag(TAG_ID) == true) return
-                        recents.setTag(TAG_ID, true)
+                        if (recents.tag == TAG_MARKER) return
+                        recents.tag = TAG_MARKER
 
                         val context = recents.context
                         val button = TextView(context).apply {
@@ -112,6 +111,6 @@ class RecentAppsHook : IXposedHookLoadPackage {
 
     companion object {
         // Stable internal tag key used only to prevent duplicate injection.
-        private const val TAG_ID = 0x59424150
+        private const val TAG_MARKER = "yb.apps.cleanrecentapps.injected"
     }
 }
