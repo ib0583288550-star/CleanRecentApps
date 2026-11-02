@@ -22,6 +22,11 @@ import de.robv.android.xposed.XposedHelpers
  */
 class RecentAppsHook : IXposedHookLoadPackage {
     override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam) {
+        val quickstepClass = try {
+            XposedHelpers.findClassIfExists("com.android.quickstep.views.RecentsView", lpparam.classLoader)
+        } catch (_: Throwable) { null } ?: return
+
+        XposedBridge.log("CleanRecentApps: Quickstep RecentsView found: ${quickstepClass.name} in ${lpparam.packageName}")
         try {
             // Hook the base View callback so this also works when RecentsView
             // inherits onAttachedToWindow rather than overriding it.
