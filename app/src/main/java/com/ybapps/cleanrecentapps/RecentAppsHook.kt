@@ -9,9 +9,9 @@ import android.view.ViewGroup
 import android.widget.TextView
 import de.robv.android.xposed.IXposedHookLoadPackage
 import de.robv.android.xposed.XC_MethodHook
-import de.robv.android.xposed.XC_LoadPackage
 import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.XposedHelpers
+import de.robv.android.xposed.callbacks.XC_LoadPackage
 
 /**
  * Experimental AOSP Quickstep integration. OEM recents implementations may differ.
@@ -24,7 +24,7 @@ class RecentAppsHook : IXposedHookLoadPackage {
 
         XposedBridge.log("CleanRecentApps: Quickstep RecentsView found in ${lpparam.packageName}")
         try {
-            XposedHelpers.findAndHookMethod(
+            XposedBridge.hookAllMethods(
                 View::class.java,
                 "onAttachedToWindow",
                 object : XC_MethodHook() {
