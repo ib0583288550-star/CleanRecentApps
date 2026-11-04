@@ -1,10 +1,8 @@
 package com.ybapps.cleanrecentapps
 
 import android.accessibilityservice.AccessibilityService
-import android.accessibilityservice.GestureDescription
 import android.content.Context
 import android.graphics.Color
-import android.graphics.Path
 import android.graphics.PixelFormat
 import android.graphics.drawable.GradientDrawable
 import android.os.Handler
@@ -19,7 +17,6 @@ class RecentAppsAccessibilityService : AccessibilityService() {
     private val handler = Handler(Looper.getMainLooper())
     private var windowManager: WindowManager? = null
     private var button: TextView? = null
-    private var recentsVisible = false
 
     override fun onServiceConnected() {
         super.onServiceConnected()
@@ -70,7 +67,6 @@ class RecentAppsAccessibilityService : AccessibilityService() {
         try {
             windowManager?.addView(view, params)
             button = view
-            recentsVisible = true
         } catch (_: Throwable) { button = null }
     }
 
@@ -78,7 +74,6 @@ class RecentAppsAccessibilityService : AccessibilityService() {
         val old = button ?: return
         try { windowManager?.removeView(old) } catch (_: Throwable) {}
         button = null
-        recentsVisible = false
     }
 
     private fun clearRecentApps() {
@@ -87,8 +82,7 @@ class RecentAppsAccessibilityService : AccessibilityService() {
             clear.performAction(AccessibilityNodeInfo.ACTION_CLICK)
             return
         }
-        val dm = resources.displayMetrics
-        swipeCard(dm.widthPixels / 2f, dm.heightPixels * 0.68f, dm.heightPixels * 0.18f, 0)
+        android.widget.Toast.makeText(this, "לא נמצא כפתור ניקוי במסך הזה", android.widget.Toast.LENGTH_SHORT).show()
     }
 
     private fun findClearAll(node: AccessibilityNodeInfo?): AccessibilityNodeInfo? {
@@ -101,19 +95,6 @@ class RecentAppsAccessibilityService : AccessibilityService() {
             if (found != null) return found
         }
         return null
-    }
-
-    private fun swipeCard(x: Float, startY: Float, endY: Float, count: Int) {
-        if (count >= 12 || !recentsVisible) return
-        val path = Path().apply { moveTo(x, startY); lineTo(x, endY) }
-        val gesture = GestureDescription.Builder()
-            .addStroke(GestureDescription.StrokeDescription(path, 0, 220)).build()
-        dispatchGesture(gesture, object : GestureResultCallback() {
-            override fun onCompleted(gestureDescription: GestureDescription?) {
-                handler.postDelayed({ swipeCard(x, startY, endY, count + 1) }, 180)
-            }
-            override fun onCancelled(gestureDescription: GestureDescription?) {}
-        }, handler)
     }
 
     private fun dp(v: Int) = (v * resources.displayMetrics.density + 0.5f).toInt()
