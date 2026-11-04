@@ -5,15 +5,22 @@
         android:label="ניקוי מהיר"
         android:icon="@android:drawable/ic_menu_delete"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
-        <meta-data android:name="xposedmodule" android:value="true" />
-        <meta-data android:name="xposeddescription" android:value="כפתור ניקוי הכל במסך האפליקציות האחרונות — yb apps" />
-        <meta-data android:name="xposedminversion" android:value="82" />
         <activity android:name=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <service
+            android:name=".RecentAppsAccessibilityService"
+            android:label="ניקוי מהיר"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data android:name="android.accessibilityservice" android:resource="@xml/clean_recent_accessibility" />
+        </service>
         <provider
             android:name=".SettingsProvider"
             android:authorities="com.ybapps.cleanrecentapps.settings"
