@@ -45,6 +45,27 @@ class MainActivity : Activity() {
             setPadding(0, dp(8), 0, dp(24))
         })
 
+        root.addView(TextView(this).apply {
+            text = "הפעלת השירות ללא LSPosed"
+            textSize = 17f
+            gravity = Gravity.CENTER
+            setTextColor(0xFFFFFFFF.toInt())
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(0xFF16865B.toInt())
+                cornerRadius = dp(14).toFloat()
+            }
+            setPadding(dp(18), dp(16), dp(18), dp(16))
+            setOnClickListener {
+                startActivity(android.content.Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS))
+            }
+        })
+        root.addView(TextView(this).apply {
+            text = "הפעל את שירות הנגישות של «ניקוי מהיר». אין צורך ב־Root או ב־LSPosed."
+            textSize = 14f
+            setTextColor(0xFFB9C7D3.toInt())
+            setPadding(0, dp(12), 0, dp(16))
+        })
+
         xLabel = addSetting(root, "מיקום אופקי")
         addSlider(root, "x", xLabel, -100, 100, currentX)
         yLabel = addSetting(root, "מיקום אנכי")
