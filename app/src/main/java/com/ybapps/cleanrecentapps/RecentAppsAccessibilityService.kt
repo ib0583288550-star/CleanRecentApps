@@ -17,6 +17,7 @@ class RecentAppsAccessibilityService : AccessibilityService() {
     private val handler = Handler(Looper.getMainLooper())
     private var windowManager: WindowManager? = null
     private var button: TextView? = null
+    private val hideRunnable = Runnable { hideButton() }
 
     override fun onServiceConnected() {
         super.onServiceConnected()
@@ -25,14 +26,19 @@ class RecentAppsAccessibilityService : AccessibilityService() {
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         event ?: return
-        if (event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
-            event.eventType != AccessibilityEvent.TYPE_WINDOWS_CHANGED) return
+        if (event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
         val pkg = event.packageName?.toString().orEmpty()
         val cls = event.className?.toString().orEmpty()
         val marker = (pkg + " " + cls).lowercase()
         val isApp = pkg == packageName
         val recents = !isApp && (marker.contains("recents") || marker.contains("overview"))
-        if (recents) showButton() else if (!isApp) hideButton()
+        if (recents) {
+            handler.removeCallbacks(hideRunnable)
+            showButton()
+        } else if (!isApp) {
+            handler.removeCallbacks(hideRunnable)
+            handler.postDelayed(hideRunnable, 1800)
+        }
     }
 
     private fun showButton() {
@@ -71,6 +77,7 @@ class RecentAppsAccessibilityService : AccessibilityService() {
     }
 
     private fun hideButton() {
+        handler.removeCallbacks(hideRunnable)
         val old = button ?: return
         try { windowManager?.removeView(old) } catch (_: Throwable) {}
         button = null
